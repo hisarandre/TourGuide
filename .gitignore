@@ -1,0 +1,12 @@
+# Project exclude paths
+/.gradle/
+/build/classes/
+/build/classes/java/main/
+/build/classes/java/test/
+/build/jacoco/
+/build/jacocoHtml/
+/build/libs/
+/build/reports/
+/build/resources/
+/build/test-results/
+/build/tmp/
