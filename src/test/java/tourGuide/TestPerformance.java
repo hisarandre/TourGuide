@@ -46,11 +46,11 @@ public class TestPerformance {
 		Locale.setDefault(Locale.US);
 	}
 
-
 	@Test
 	public void highVolumeTrackLocation() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
+
 		// Users should be incremented up to 100,000, and test finishes within 15 minutes
 		InternalTestHelper.setInternalUserNumber(100);
 		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
@@ -60,6 +60,7 @@ public class TestPerformance {
 
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
+
 		Collection<CompletableFuture> completableFutures = new ArrayList<>();
 
 		for(User user : allUsers) {
@@ -67,7 +68,6 @@ public class TestPerformance {
 		}
 
 		completableFutures.forEach(CompletableFuture::join);
-
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();

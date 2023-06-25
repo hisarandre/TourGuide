@@ -8,7 +8,6 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import gpsUtil.GpsUtil;
@@ -40,8 +39,8 @@ public class TestRewardsService {
 		User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 		user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
-		tourGuideService.trackUserLocation(user).join(); //added join
-		rewardsService.awaitCalculateRewardsEnding(); //added
+		tourGuideService.trackUserLocation(user).join();
+		rewardsService.awaitCalculateRewardsEnding();
 		List<UserReward> userRewards = user.getUserRewards();
 		tourGuideService.tracker.stopTracking();
 		assertEquals(1, userRewards.size());
@@ -67,7 +66,7 @@ public class TestRewardsService {
 		User user = tourGuideService.getAllUsers().get(0);
 
 		rewardsService.calculateRewards(user);
-		rewardsService.awaitCalculateRewardsEnding(); // added
+		rewardsService.awaitCalculateRewardsEnding();
 
 		List<UserReward> userRewards = tourGuideService.getUserRewards(user);
 
