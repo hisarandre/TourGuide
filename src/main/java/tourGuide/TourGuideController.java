@@ -12,7 +12,6 @@ import com.jsoniter.output.JsonStream;
 
 import gpsUtil.location.VisitedLocation;
 import tourGuide.dto.UserPreferencesDTO;
-import tourGuide.model.UserPreferences;
 import tourGuide.service.TourGuideService;
 import tourGuide.model.User;
 import tripPricer.Provider;
@@ -34,8 +33,7 @@ public class TourGuideController {
 		return JsonStream.serialize(visitedLocation.location);
     }
     
-    //  TODO: Change this method to no longer return a List of Attractions.
-    @RequestMapping("/getNearbyAttractions") 
+    @RequestMapping("/getNearbyAttractions")
     public String getNearbyAttractions(@RequestParam String userName) throws ExecutionException, InterruptedException {
         User user = tourGuideService.getUser(userName);
     	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
@@ -49,7 +47,6 @@ public class TourGuideController {
     
     @RequestMapping("/getAllCurrentLocations")
     public String getAllCurrentLocations() {
-    	// TODO: Get a list of every user's most recent location as JSON
         Map<String, Location> allUsersLocation = tourGuideService.getAllCurrentLocations();
     	return JsonStream.serialize(allUsersLocation);
     }
@@ -68,6 +65,5 @@ public class TourGuideController {
     private User getUser(String userName) {
     	return tourGuideService.getUser(userName);
     }
-   
 
 }

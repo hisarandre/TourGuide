@@ -4,18 +4,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.mapstruct.factory.Mappers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
 import tourGuide.dto.UserPreferencesDTO;
@@ -36,22 +33,7 @@ public class TourGuideService {
 	public final Tracker tracker;
 	boolean testMode = true;
 
-	// TODO don't do shit
-	final int max_working_size = 10;
-
-	BlockingQueue work_queue = new ArrayBlockingQueue(max_working_size);
-	ExecutorService super_executor = new ThreadPoolExecutor(
-			0,
-			10,
-			30,
-			TimeUnit.SECONDS,
-			work_queue
-	);
-
-
-
 	final ExecutorService executor = Executors.newFixedThreadPool(200);
-
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -66,32 +48,66 @@ public class TourGuideService {
 		tracker = new Tracker(this);
 		addShutDownHook();
 	}
-	
+
+	/**
+	 * Retrieves the list of rewards for a given user.
+	 *
+	 * @param user The user for whom to retrieve the rewards.
+	 * @return The list of rewards for the user.
+	 */
 	public List<UserReward> getUserRewards(User user) {
 		return user.getUserRewards();
 	}
-	
-	public VisitedLocation getUserLocation(User user) throws ExecutionException, InterruptedException {
+
+	/**
+	 * Retrieves the current location of a user.
+	 *
+	 * @param user The user for whom to retrieve the location.
+	 * @return The visited location of the user.
+	 */
+	public VisitedLocation getUserLocation(User user) {
 			VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ?
 					user.getLastVisitedLocation() :
 					trackUserLocation(user).join();
 			return visitedLocation;
 	}
-	
+
+	/**
+	 * Retrieves a user based on the username.
+	 *
+	 * @param userName The username of the user to retrieve.
+	 * @return The user object corresponding to the username.
+	 */
 	public User getUser(String userName) {
 		return internalUserMap.get(userName);
 	}
-	
+
+	/**
+	 * Retrieves all the users.
+	 *
+	 * @return The list of all users.
+	 */
 	public List<User> getAllUsers() {
 		return internalUserMap.values().stream().collect(Collectors.toList());
 	}
-	
+
+	/**
+	 * Adds a new user.
+	 *
+	 * @param user The user to add.
+	 */
 	public void addUser(User user) {
 		if(!internalUserMap.containsKey(user.getUserName())) {
 			internalUserMap.put(user.getUserName(), user);
 		}
 	}
-	
+
+	/**
+	 * Retrieves trip deals for a user.
+	 *
+	 * @param user The user for whom to retrieve trip deals.
+	 * @return The list of trip deals for the user.
+	 */
 	public List<Provider> getTripDeals(User user) {
 		int cumulativeRewardPoints = user.getUserRewards()
 				.stream().mapToInt(i -> i.getRewardPoints()).sum();
@@ -106,6 +122,12 @@ public class TourGuideService {
 		return providers;
 	}
 
+	/**
+	 * Tracks the location of a user asynchronously.
+	 *
+	 * @param user The user for whom to track the location.
+	 * @return A CompletableFuture that will complete with the visited location.
+	 */
 	public CompletableFuture<VisitedLocation> trackUserLocation(User user) {
 		Locale.setDefault(Locale.US);
 
@@ -118,39 +140,59 @@ public class TourGuideService {
 				}, executor);
 	}
 
+	/**
+	 * Retrieves nearby attractions for a user's visited location.
+	 *
+	 * @param user             The user for whom to retrieve nearby attractions.
+	 * @param visitedLocation  The visited location of the user.
+	 * @return The list of nearby attractions.
+	 */
 	public List<NearbyAttraction> getNearByAttractions(User user, VisitedLocation visitedLocation) {
 		List<NearbyAttraction> nearbyAttractionsList = new ArrayList<>();
 
-		for(Attraction attraction : gpsUtil.getAttractions()) {
+		// Iterate over attractions and calculate distance and reward points
+		gpsUtil.getAttractions().forEach(attraction -> {
 			Location attractionLocation = new Location(attraction.latitude, attraction.longitude);
-			double distance = rewardsService.getDistance(attractionLocation,visitedLocation.location);
+			double distance = rewardsService.getDistance(attractionLocation, visitedLocation.location);
+			int rewardPoints = rewardsService.getRewardPoints(attraction, user);
 
+			// Create a NearbyAttraction object and add it to the list
 			NearbyAttraction nearbyAttraction = new NearbyAttraction(
 					attraction.attractionName,
 					attractionLocation,
 					visitedLocation.location,
 					distance,
-					rewardsService.getRewardPoints(attraction, user)
+					rewardPoints
 			);
+
 			nearbyAttractionsList.add(nearbyAttraction);
-		}
+		});
 
-		return getLimitAndSortAttractions(nearbyAttractionsList, 5);
-	}
-
-	public List<NearbyAttraction> getLimitAndSortAttractions(List<NearbyAttraction> nearbyAttractionsList, int NumberOfAttraction) {
+		// Sort attractions by distance, limit to top 5, and return the list
 		return nearbyAttractionsList.stream()
 				.sorted(Comparator.comparing(NearbyAttraction::getDistance))
-				.limit(NumberOfAttraction)
+				.limit(5)
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * Retrieves the current locations of all users.
+	 *
+	 * @return A map of user IDs to their current locations.
+	 */
 	public Map<String, Location> getAllCurrentLocations(){
 		Map<String, Location> allUsersLocation = new HashMap<>();
 		getAllUsers().forEach(user -> allUsersLocation.put(user.getUserId().toString(),user.getLastVisitedLocation().location));
 		return allUsersLocation;
 	}
 
+	/**
+	 * Updates the user preferences for a given user.
+	 *
+	 * @param userName          The username of the user.
+	 * @param userPreferencesDTO The updated user preferences.
+	 * @return The updated user preferences DTO.
+	 */
 	public UserPreferencesDTO updateUserPreferences(String userName, UserPreferencesDTO userPreferencesDTO) {
 		User user = getUser(userName);
 
@@ -160,12 +202,9 @@ public class TourGuideService {
 
 		return userPreferencesUpdated;
 	}
+
 	private void addShutDownHook() {
-		Runtime.getRuntime().addShutdownHook(new Thread() { 
-		      public void run() {
-		        tracker.stopTracking();
-		      } 
-		    }); 
+		Runtime.getRuntime().addShutdownHook(new Thread(tracker::stopTracking));
 	}
 	
 	/**********************************************************************************
