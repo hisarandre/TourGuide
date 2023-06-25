@@ -26,7 +26,6 @@ import tripPricer.Provider;
 import tripPricer.TripPricer;
 
 @Service
-@EnableAsync
 public class TourGuideService {
 
 	private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
@@ -36,6 +35,20 @@ public class TourGuideService {
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
+
+	// TODO don't do shit
+	final int max_working_size = 10;
+
+	BlockingQueue work_queue = new ArrayBlockingQueue(max_working_size);
+	ExecutorService super_executor = new ThreadPoolExecutor(
+			0,
+			10,
+			30,
+			TimeUnit.SECONDS,
+			work_queue
+	);
+
+
 
 	final ExecutorService executor = Executors.newFixedThreadPool(200);
 
@@ -58,7 +71,7 @@ public class TourGuideService {
 		return user.getUserRewards();
 	}
 	
-	public VisitedLocation getUserLocation(User user)  {
+	public VisitedLocation getUserLocation(User user) throws ExecutionException, InterruptedException {
 			VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ?
 					user.getLastVisitedLocation() :
 					trackUserLocation(user).join();
@@ -80,31 +93,29 @@ public class TourGuideService {
 	}
 	
 	public List<Provider> getTripDeals(User user) {
-		int cumulativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
-		List<Provider> providers = tripPricer.getPrice(tripPricerApiKey, user.getUserId(), user.getUserPreferences().getNumberOfAdults(), 
-				user.getUserPreferences().getNumberOfChildren(), user.getUserPreferences().getTripDuration(), cumulativeRewardPoints);
+		int cumulativeRewardPoints = user.getUserRewards()
+				.stream().mapToInt(i -> i.getRewardPoints()).sum();
+		List<Provider> providers = tripPricer.getPrice(
+				tripPricerApiKey,
+				user.getUserId(),
+				user.getUserPreferences().getNumberOfAdults(),
+				user.getUserPreferences().getNumberOfChildren(),
+				user.getUserPreferences().getTripDuration(),
+				cumulativeRewardPoints);
 		user.setTripDeals(providers);
 		return providers;
 	}
-	
-/*	public Future<VisitedLocation> trackUserLocation(User user) {
-
-		return executor.submit(() -> {
-			VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
-			user.addToVisitedLocations(visitedLocation);
-			rewardsService.calculateRewards(user).get();
-			return visitedLocation;
-		});
-	}*/
 
 	public CompletableFuture<VisitedLocation> trackUserLocation(User user) {
+		Locale.setDefault(Locale.US);
+
 		return CompletableFuture
-				.supplyAsync(() -> gpsUtil.getUserLocation(user.getUserId()), executor)
-				.thenApplyAsync(visitedLocation -> {
+				.supplyAsync(() -> {
+					VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 					user.addToVisitedLocations(visitedLocation);
-					rewardsService.calculateRewards(user).join();
+					rewardsService.calculateRewards(user);
 					return visitedLocation;
-				}, rewardsService.executor);
+				}, executor);
 	}
 
 	public List<NearbyAttraction> getNearByAttractions(User user, VisitedLocation visitedLocation) {

@@ -6,16 +6,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
+import org.junit.jupiter.api.BeforeAll;
 import rewardCentral.RewardCentral;
 import tourGuide.helper.InternalTestHelper;
 import tourGuide.service.RewardsService;
@@ -25,13 +24,13 @@ import tourGuide.model.UserReward;
 
 public class TestRewardsService {
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public void init() {
 		Locale.setDefault(Locale.US);
 	}
 
 	@Test
-	public void userGetRewards() throws ExecutionException, InterruptedException {
+	public void userGetRewards() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 
@@ -41,14 +40,13 @@ public class TestRewardsService {
 		User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 		user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
-
-		tourGuideService.trackUserLocation(user).join();
-
+		tourGuideService.trackUserLocation(user).join(); //added join
+		rewardsService.awaitCalculateRewardsEnding(); //added
 		List<UserReward> userRewards = user.getUserRewards();
 		tourGuideService.tracker.stopTracking();
 		assertEquals(1, userRewards.size());
 	}
-	
+
 	@Test
 	public void isWithinAttractionProximity() {
 		GpsUtil gpsUtil = new GpsUtil();
@@ -56,8 +54,7 @@ public class TestRewardsService {
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 		assertTrue(rewardsService.isWithinAttractionProximity(attraction, attraction));
 	}
-	
-	// @Ignore // Needs fixed - can throw ConcurrentModificationException
+
 	@Test
 	public void nearAllAttractions() throws ExecutionException, InterruptedException {
 		GpsUtil gpsUtil = new GpsUtil();
@@ -68,19 +65,13 @@ public class TestRewardsService {
 		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
 
 		User user = tourGuideService.getAllUsers().get(0);
-		
-		//rewardsService.calculateRewards(user);
 
-		CompletableFuture<?>[] futures = tourGuideService.getAllUsers().stream()
-				.map(rewardsService::calculateRewards)
-				.toArray(CompletableFuture[]::new);
-		CompletableFuture.allOf(futures).join();
-
+		rewardsService.calculateRewards(user);
+		rewardsService.awaitCalculateRewardsEnding(); // added
 
 		List<UserReward> userRewards = tourGuideService.getUserRewards(user);
 
 		tourGuideService.tracker.stopTracking();
 		assertEquals(gpsUtil.getAttractions().size(), userRewards.size());
 	}
-	
 }

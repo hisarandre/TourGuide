@@ -19,9 +19,14 @@ public class UserReward {
 		this.attraction = attraction;
 		this.rewardPoints = rewardPoints;
 	}
-	
+
 	public UserReward(VisitedLocation visitedLocation, Attraction attraction) {
 		this.visitedLocation = visitedLocation;
 		this.attraction = attraction;
 	}
+
+	public String getAttractionName(){
+		return this.attraction.attractionName;
+	}
+
 }
