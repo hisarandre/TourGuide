@@ -7,7 +7,7 @@ import tourGuide.dto.UserPreferencesDTO;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2023-06-25T23:35:41+0200",
+    date = "2023-06-26T21:16:26+0200",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 1.8.0_372 (Amazon.com Inc.)"
 )
 @Component

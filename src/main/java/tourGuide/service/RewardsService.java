@@ -18,7 +18,7 @@ import tourGuide.model.UserReward;
  * Service class that handles the calculation of rewards for users based on their visited locations.
  */
 @Service
-public class RewardsService {
+public class RewardsService implements IRewardsService{
     private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
 	// proximity in miles
     private int defaultProximityBuffer = 10;
@@ -39,27 +39,17 @@ public class RewardsService {
 		this.rewardsCentral = rewardCentral;
 	}
 
-	/**
-	 * Sets the proximity buffer to the specified value.
-	 *
-	 * @param proximityBuffer The proximity buffer value to set.
-	 */
+	@Override
 	public void setProximityBuffer(int proximityBuffer) {
 		this.proximityBuffer = proximityBuffer;
 	}
 
-	/**
-	 * Sets the proximity buffer to the default value.
-	 */
+	@Override
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
-	/**
-	 * Calculates the rewards for a user based on their visited locations.
-	 *
-	 * @param user The User for which to calculate the rewards.
-	 */
+	@Override
 	public void calculateRewards(User user) {
 		CompletableFuture.runAsync(() -> {
 			List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
@@ -79,11 +69,7 @@ public class RewardsService {
 		}, executor);
 	}
 
-	/**
-	 * Waits for the completion of the calculateRewards task.
-	 * If the task does not complete within the given times,
-	 * it shuts down the executor and interrupts the current thread.
-	 */
+	@Override
 	public void awaitCalculateRewardsEnding() {
 		try {
 			executor.shutdown();
@@ -94,46 +80,22 @@ public class RewardsService {
 		}
 	}
 
-	/**
-	 * Checks if the given location is within the attraction proximity range.
-	 *
-	 * @param attraction The Attraction to check.
-	 * @param location   The Location to compare with.
-	 * @return True if the location is within the attraction proximity range, false otherwise.
-	 */
+	@Override
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
 
-	/**
-	 * Checks if the given visited location is near the given attraction.
-	 *
-	 * @param visitedLocation The VisitedLocation to check.
-	 * @param attraction      The Attraction to compare with.
-	 * @return True if the visited location is near the attraction, false otherwise.
-	 */
-	private boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
+	@Override
+	public boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
 		return getDistance(attraction, visitedLocation.location) > proximityBuffer ? false : true;
 	}
 
-	/**
-	 * Calculates the reward points for the given attraction and user.
-	 *
-	 * @param attraction The attraction for which to calculate the reward points.
-	 * @param user The user for whom the reward points are calculated.
-	 * @return The reward points for the attraction and user.
-	 */
-	int getRewardPoints(Attraction attraction, User user) {
+	@Override
+	public int getRewardPoints(Attraction attraction, User user) {
 		return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
 	}
 
-	/**
-	 * Calculates the distance between two locations using the haversine formula.
-	 *
-	 * @param loc1 The first location.
-	 * @param loc2 The second location.
-	 * @return The distance between the two locations in statute miles.
-	 */
+	@Override
 	public double getDistance(Location loc1, Location loc2) {
         double lat1 = Math.toRadians(loc1.latitude);
         double lon1 = Math.toRadians(loc1.longitude);
