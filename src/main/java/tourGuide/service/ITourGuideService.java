@@ -69,6 +69,13 @@ public interface ITourGuideService {
     CompletableFuture<VisitedLocation> trackUserLocation(User user);
 
     /**
+     * Waits for the completion of the track user task.
+     * If the task does not complete within the given time,
+     * it shuts down the executor and interrupts the current thread.
+     */
+    void awaitTrackUserEnding();
+
+    /**
      * Retrieves nearby attractions for a user's visited location.
      *
      * @param user             The user for whom to retrieve nearby attractions.

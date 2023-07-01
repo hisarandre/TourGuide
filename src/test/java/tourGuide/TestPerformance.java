@@ -61,13 +61,11 @@ public class TestPerformance {
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 
-		Collection<CompletableFuture> completableFutures = new ArrayList<>();
-
 		for(User user : allUsers) {
-			completableFutures.add(tourGuideService.trackUserLocation(user));
+			tourGuideService.trackUserLocation(user);
 		}
 
-		completableFutures.forEach(CompletableFuture::join);
+		tourGuideService.awaitTrackUserEnding();
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();

@@ -108,6 +108,17 @@ public class TourGuideService implements ITourGuideService {
 	}
 
 	@Override
+	public void awaitTrackUserEnding() {
+		try {
+			executor.shutdown();
+			executor.awaitTermination(15, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			executor.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	@Override
 	public List<NearbyAttraction> getNearByAttractions(User user, VisitedLocation visitedLocation) {
 		List<NearbyAttraction> nearbyAttractionsList = new ArrayList<>();
 
