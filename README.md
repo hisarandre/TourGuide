@@ -26,7 +26,11 @@ This will start the app on the configured server address : http://localhost:8080
 
 ## Testing
 
-` ./gradlew jacocoTestReport `
+Run the command for testing:
+- `$ ./gradlew test `
+
+Run the command to generate the jacoco report:
+- `$ ./gradlew jacocoTestReport `
 
 ## Endpoints
 Note: use "?userName=internalUser1" as param for testing the endpoints
