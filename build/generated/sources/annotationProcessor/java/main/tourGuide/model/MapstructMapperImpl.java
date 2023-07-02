@@ -7,8 +7,8 @@ import tourGuide.dto.UserPreferencesDTO;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2023-07-02T09:56:46+0200",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 1.8.0_372 (Amazon.com Inc.)"
+    date = "2023-07-02T18:13:07+0200",
+    comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.0.2.jar, environment: Java 1.8.0_372 (Amazon.com Inc.)"
 )
 @Component
 public class MapstructMapperImpl implements MapstructMapper {
