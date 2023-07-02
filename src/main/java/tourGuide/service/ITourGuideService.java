@@ -94,11 +94,9 @@ public interface ITourGuideService {
     /**
      * Updates the user preferences for a given user.
      *
-     * @param userName          The username of the user.
+     * @param user               The user to update.
      * @param userPreferencesDTO The updated user preferences.
      * @return The updated user preferences DTO.
      */
-    UserPreferencesDTO updateUserPreferences(String userName, UserPreferencesDTO userPreferencesDTO);
-
-
+    UserPreferencesDTO updateUserPreferences(User user, UserPreferencesDTO userPreferencesDTO);
 }

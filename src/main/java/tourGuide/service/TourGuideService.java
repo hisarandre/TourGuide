@@ -122,6 +122,9 @@ public class TourGuideService implements ITourGuideService {
 	public List<NearbyAttraction> getNearByAttractions(User user, VisitedLocation visitedLocation) {
 		List<NearbyAttraction> nearbyAttractionsList = new ArrayList<>();
 
+		// Check if User or visited location is null
+		if (visitedLocation.location == null) return nearbyAttractionsList;
+
 		// Iterate over attractions and calculate distance and reward points
 		gpsUtil.getAttractions().forEach(attraction -> {
 			Location attractionLocation = new Location(attraction.latitude, attraction.longitude);
@@ -150,18 +153,16 @@ public class TourGuideService implements ITourGuideService {
 	@Override
 	public Map<String, Location> getAllCurrentLocations(){
 		Map<String, Location> allUsersLocation = new HashMap<>();
-		getAllUsers().forEach(user -> allUsersLocation.put(user.getUserId().toString(),user.getLastVisitedLocation().location));
+		getAllUsers().forEach(user -> allUsersLocation
+				.put(user.getUserId().toString(), getUserLocation(user).location));
 		return allUsersLocation;
 	}
 
 	@Override
-	public UserPreferencesDTO updateUserPreferences(String userName, UserPreferencesDTO userPreferencesDTO) {
-		User user = getUser(userName);
-
+	public UserPreferencesDTO updateUserPreferences(User user, UserPreferencesDTO userPreferencesDTO) {
 		UserPreferences userPreferences = mapper.userPreferencesDTOToUserPreferences(userPreferencesDTO);
 		user.setUserPreferences(userPreferences);
 		UserPreferencesDTO userPreferencesUpdated = mapper.userPreferencesToUserPreferencesDTO(user.getUserPreferences());
-
 		return userPreferencesUpdated;
 	}
 
@@ -192,7 +193,7 @@ public class TourGuideService implements ITourGuideService {
 	}
 
 
-	private void generateUserLocationHistory(User user) {
+	public void generateUserLocationHistory(User user) {
 		IntStream.range(0, 3).forEach(i-> {
 			user.addToVisitedLocations(new VisitedLocation(user.getUserId(), new Location(generateRandomLatitude(), generateRandomLongitude()), getRandomTime()));
 		});

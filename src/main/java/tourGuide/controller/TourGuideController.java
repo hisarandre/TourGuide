@@ -8,6 +8,8 @@ import gpsUtil.location.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jsoniter.output.JsonStream;
@@ -67,8 +69,12 @@ public class TourGuideController {
     public String getNearbyAttractions(@RequestParam String userName) throws ExecutionException, InterruptedException {
         logger.info("request nearby attraction from " + userName);
         User user = tourGuideService.getUser(userName);
-    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return JsonStream.serialize(tourGuideService.getNearByAttractions(user, visitedLocation));
+
+        //check is the user exist
+        if (user == null) return JsonStream.serialize("no user found");
+
+        VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
+        return JsonStream.serialize(tourGuideService.getNearByAttractions(user, visitedLocation));
     }
 
     /**
@@ -80,7 +86,12 @@ public class TourGuideController {
     @RequestMapping("/getRewards") 
     public String getRewards(@RequestParam String userName) {
         logger.info("request rewards from " + userName);
-    	return JsonStream.serialize(tourGuideService.getUserRewards(getUser(userName)));
+        User user = tourGuideService.getUser(userName);
+
+        //check is the user exist
+        if (user == null) return JsonStream.serialize("no user found");
+
+    	return JsonStream.serialize(tourGuideService.getUserRewards(user));
     }
 
     /**
@@ -92,7 +103,7 @@ public class TourGuideController {
     public String getAllCurrentLocations() {
         logger.info("request all current locations");
         Map<String, Location> allUsersLocation = tourGuideService.getAllCurrentLocations();
-    	return JsonStream.serialize(allUsersLocation);
+        return JsonStream.serialize(allUsersLocation);
     }
 
     /**
@@ -104,7 +115,12 @@ public class TourGuideController {
     @RequestMapping("/getTripDeals")
     public String getTripDeals(@RequestParam String userName) {
         logger.info("request trip deals from " + userName);
-    	List<Provider> providers = tourGuideService.getTripDeals(getUser(userName));
+        User user = tourGuideService.getUser(userName);
+
+        //check is the user exist
+        if (user == null) return JsonStream.serialize("no user found");
+
+    	List<Provider> providers = tourGuideService.getTripDeals(user);
     	return JsonStream.serialize(providers);
     }
 
@@ -116,9 +132,14 @@ public class TourGuideController {
      * @return The updated user preferences.
      */
     @PutMapping("/userPreferences")
-    public UserPreferencesDTO updateUserPreferences(@RequestParam String userName, @RequestBody UserPreferencesDTO userPreferencesDTO) {
+    public String updateUserPreferences(@RequestParam String userName, @RequestBody UserPreferencesDTO userPreferencesDTO) {
         logger.info("update user preferences from " + userName);
-        return tourGuideService.updateUserPreferences(userName, userPreferencesDTO);
+        User user = tourGuideService.getUser(userName);
+
+        //check is the user exist
+        if (user == null) return JsonStream.serialize("no user found");
+
+        return JsonStream.serialize(tourGuideService.updateUserPreferences(user, userPreferencesDTO));
     }
 
     /**
