@@ -7,10 +7,7 @@
 ## Versions
 - Spring Boot: 2.4.2
 - Gradle 7.0.2
-- JDK: 19
-- JUnit Jupiter: 5.8.1
-- Jacoco: 0.8.22
-- MapStruct: 1.5.5.Final
+- JDK: at least 16
 
 ## Run the app
 
